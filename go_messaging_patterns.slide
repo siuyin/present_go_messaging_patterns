@@ -17,70 +17,72 @@ Let's implement them with Go Concurrency.
 pub1/main.go:
 .code pub1/main.go /010/,/020/
 
-This publisher sends the current time down the channel
-once a second forever.
+This publisher *pub* sends the current time down the time channel
+once a second, forever.
 
 * Simple Subscriber
 .code pub1/main.go /050/,/060/
-This subscriber accepts a string from a channel and prints it out.
+Subscriber *sub* supplies an input time channel.
+
+*sub* pulls time objects out of its input channel and displays it.
 
 * Main program
+.code pub1/main.go /070/,/080/
 .play pub1/main.go /030/,/040/
-Here we have a single subscriber.
 
-How do we add a second subscriber?
-
-* Two Subscribers
+* Adding multiple subscribers
 pub2/main.go:
 .play pub2/main.go /030/,/040/
 
 Can we have multiple publishers?
 
 * Multiple Publishers
-Publisher is now given a name.
+Publisher is now given a time zone name.
 mpub1/main.go:
 .code mpub1/main.go /010/,/020/
 
-* Connecting Publishers to Subscribers
+* Connecting the multiple publishers
 .play mpub1/main.go /030/,/040/
-
-This code works, but it looks rather clumsy.
 
 * Fast Publisher / producer
 mpubSlow/main.go:
 .play -edit mpubSlow/main.go /010/,/020/
-Don't run this now, instead run the next slide first.
+*pub* now updates every 100 Milliseconds.
 
 * Slow subscriber / consumer
 .play -edit mpubSlow/main.go /050/,/060/
 Why are'nt we getting all the messages published every 100 Millisecond?
 
+.play -edit mpubSlow/main.go /030/,/032/
 We can buffer the producer and/or the consumer. However this only works for absorbing producer bursts, not indefinitely.
-
-* fanIn accepts multiple publishers
-mpub2/main.go:
-.code mpub2/main.go /070/,/080/
-
-* fanOut copies input to multiple channels
-.code mpub2/main.go /090/,/100/
-.code mpub2/main.go /050/,/060/
-
-* Using fanIn and fanOut
-.play mpub2/main.go /030/,/040/
-
 
 * Work Queue with two workers
 q1/main.go:
+.code q1/main.go /030/,/032/
 .code q1/main.go /010/,/020/
-*push* pushes work into the work queue.
+*push* pushes *job* s into the work queue.
 
 * Worker
 .play -edit q1/main.go /050/,/060/
 .play -edit q1/main.go /030/,/040/
 
-* Request / Response
-reqrsp/main.go:
-.play -edit reqrsp/main.go /010/,/020/
+* Workers on demand
+.play -edit q1/main.go /030/,/046/
 
-* Request / Response 2: Stateless Workers
+
+* Request / Response -- for stateless services
 reqrsp2/main.go:
+Each job has a Requestor (reply to) field.
+.code reqrsp2/main.go /050/,/060/
+
+Launch workers listening on the job queue.
+.code reqrsp2/main.go /010/,/012/
+
+* dbl worker replies on the reply channel
+.code reqrsp2/main.go /030/,/040/
+
+* Make the requests
+.code reqrsp2/main.go /070/,/080/
+.play -edit reqrsp2/main.go /013/,/014/
+
+The *done* channel is to signal main program to end.

@@ -7,46 +7,55 @@ import (
 
 //030_OMIT
 func main() {
-	p := pub("Pub1")
+	timeCh := make(chan time.Time, 100)
+	pub(timeCh)
 	s1 := sub("Sub1")
 	s2 := sub("Sub2")
-
-	for {
-		select {
-		case t := <-p:
-			s1 <- t
-			s2 <- t
-		}
-	}
+	publish(timeCh, s1, s2) // HL
+	select {}               // wait forever
 }
 
 //040_OMIT
 
 //010_OMIT
-func pub(name string) <-chan string {
-	ch := make(chan string)
+func pub(ch chan<- time.Time) {
 	tkr := time.Tick(time.Second)
 	go func() {
 		for {
 			select {
 			case t := <-tkr:
-				ch <- fmt.Sprintf("%s: %s", name, t.String())
+				ch <- t
 			}
 		}
 	}()
-	return ch
 }
 
 //020_OMIT
 //050_OMIT
-func sub(name string) chan<- string {
-	ch := make(chan string)
+func sub(name string) chan<- time.Time {
+	ch := make(chan time.Time)
 	go func() {
 		for {
-			fmt.Printf("%s: %s\n", name, <-ch)
+			t := <-ch
+			fmt.Printf("%s: %s\n", name, t.Format("15:04:05.000000"))
 		}
 	}()
 	return ch
 }
 
 //060_OMIT
+//070_OMIT
+func publish(ch <-chan time.Time, subs ...chan<- time.Time) {
+	go func() {
+		for {
+			select {
+			case t := <-ch:
+				for i := 0; i < len(subs); i++ {
+					subs[i] <- t
+				}
+			}
+		}
+	}()
+}
+
+//080_OMIT

@@ -2,69 +2,75 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 )
 
+//050_OMIT
 type job struct {
-	Requestor string
+	Requestor chan<- int // HL
 	In        int
-	Res       int
 }
 
-func dbl(name string, inp <-chan job) <-chan job {
-	out := make(chan job)
+//060_OMIT
+
+//030_OMIT
+func dbl(jc <-chan job) {
 	go func() {
 		for {
-			select {
-			case j := <-inp:
-				time.Sleep(time.Second)
-				o := job{}
-				o.Requestor, o.In = j.Requestor, j.In
-				o.Res = 2 * j.In
-				out <- o
-
-			}
+			j := <-jc
+			time.Sleep(time.Second) // slow worker
+			j.Requestor <- j.In * 2 // reply channel // HL
 		}
 	}()
-	return out
 }
+
+//040_OMIT
+//070_OMIT
+func request(jc chan<- job, i int, done chan<- struct{}) {
+	go func() {
+		start := time.Now()
+		rply := make(chan int)
+		j := job{Requestor: rply, In: i}
+		jc <- j
+		fmt.Printf("2*%02d = %02d s:%s run:%.6f\n", i, <-rply, // Get reply // HL
+			start.Format("15:04:05.000000"),
+			time.Now().Sub(start).Seconds())
+		done <- struct{}{}
+	}()
+}
+
+//080_OMIT
 
 //010_OMIT
 func main() {
-	start := time.Now()
-	in := make(chan job, 100)
-	numWorkers := 15
-	cases := []reflect.SelectCase{}
+	dblQ := make(chan job, 100)
+	numWorkers := 5
 	for i := 1; i <= numWorkers; i++ {
-		out := dbl(fmt.Sprintf("Worker%d", i), in)
-		sc := reflect.SelectCase{Dir: reflect.SelectRecv,
-			Chan: reflect.ValueOf(out)}
-		cases = append(cases, sc)
+		dbl(dblQ)
 	}
-
-	numReq := 16
+	//012_OMIT
+	//013_OMIT
+	done := make(chan struct{})
+	numReq := 10
 	for i := 1; i <= numReq; i++ {
-		j := job{Requestor: fmt.Sprintf("Req%d", i), In: i}
-		in <- j
+		request(dblQ, i, done)
 	}
-	// close(in)
-
-	for i := 1; i <= numReq; i++ {
-		_, v, ok := reflect.Select(cases)
-		// if i == 0 { // in channel closed
-		// 	fmt.Println("Zero selected")
-		// 	//break
-		// }
-		if ok {
-			j := v.Interface().(job)
-			fmt.Printf("%s: %d => %d\n", j.Requestor, j.In, j.Res)
-		} else {
-			fmt.Println("Channel Closed")
-			// break
+	//014_OMIT
+	start := time.Now()
+	n := 0
+MAIN:
+	for {
+		select {
+		case <-done:
+			n++
+			if n >= numReq {
+				close(dblQ)
+				fmt.Printf("Exiting. Completed %d jobs\n", n)
+				break MAIN
+			}
 		}
 	}
-	fmt.Printf("%.6f\n", time.Now().Sub(start).Seconds())
+	fmt.Printf("total run time: %.6f\n", time.Now().Sub(start).Seconds())
 }
 
 //020_OMIT
