@@ -22,7 +22,7 @@ func main() {
 
 //040_OMIT
 func main2() { // HL
-	jobQ := make(chan job, 100)
+	jobQ := make(chan job, 10)
 	push("Push1", jobQ)
 	//032_OMIT
 	for i := 1; i <= 10; i++ { // HL
@@ -52,11 +52,11 @@ func push(name string, jc chan<- job) {
 func worker(name string, n int, jc <-chan job) {
 	go func() {
 		for {
-			s := <-jc
+			j := <-jc
 			fmt.Printf("%s: %s  latency:%.6f\n", name,
-				s.Time.Format("04:05.000000"), time.Now().Sub(s.Time).Seconds())
+				j.Time.Format("04:05.000000"), time.Now().Sub(j.Time).Seconds())
 			time.Sleep(time.Duration(n) * time.Second)
-			fmt.Printf("%s: runtime:%.6f\n", name, time.Now().Sub(s.Time).Seconds()) //	 // HL
+			fmt.Printf("%s: runtime:%.6f\n", name, time.Now().Sub(j.Time).Seconds()) //	 // HL
 		}
 	}()
 }

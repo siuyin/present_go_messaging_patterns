@@ -13,6 +13,21 @@ siuyin@beyondbroadcast.com
 
 Let's implement them with Go Concurrency.
 
+* When to use Messaging within Go
+- Why not an external library like ZeroMQ or nanomsg/go-mangos ?
+- Why not use an broker like NATS or RabbitMQ?
+
+Advantages:
+
+- Avoid external dependency on a messaging library or broker
+- Enhanced cohesion / better tracking -- all relevant components together
+- Simplified deployment -- one single static binary
+
+
+Disadvantage:
+
+- Can't upgrade individual application components in deployed environment as the build is a monolith. However A/B testing is still available. Deploy new (B service), disable old (A service), enable new (B service).
+
 * Simple Publisher
 pub1/main.go:
 .code pub1/main.go /010/,/020/
@@ -46,7 +61,7 @@ mpub1/main.go:
 
 * Fast Publisher / producer
 mpubSlow/main.go:
-.play -edit mpubSlow/main.go /010/,/020/
+.code  mpubSlow/main.go /010/,/020/
 *pub* now updates every 100 Milliseconds.
 
 * Slow subscriber / consumer
@@ -65,6 +80,7 @@ q1/main.go:
 * Worker
 .play -edit q1/main.go /050/,/060/
 .play -edit q1/main.go /030/,/040/
+Average worker speed must be higher than 1 job / second.
 
 * Workers on demand
 .play -edit q1/main.go /030/,/046/
