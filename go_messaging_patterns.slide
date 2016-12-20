@@ -102,3 +102,27 @@ Launch workers listening on the job queue.
 .play -edit reqrsp2/main.go /013/,/014/
 
 The *done* channel is to signal main program to end.
+
+* Sample Application
+- Accept user input string
+- Broadcast the string to 3 modules to process in parallel
+- Consolidate the output and display
+
+* User Input Module
+lucase/main.go:
+.code lucase/main.go /050/,/060/
+.code lucase/main.go /030/,/040/
+
+* Lower Casing Module
+.code lucase/main.go /010/,/020/
+
+* Consolidator
+.code lucase/main.go /090/,/100/
+
+* Message Routing
+.code lucase/main.go /070/,/080/
+
+Demo:
+
+ cd /home/siuyin/go/src/siuyin/present_go_messaging_patterns/lucase
+ go run main.go
